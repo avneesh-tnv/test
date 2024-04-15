@@ -1,0 +1,337 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+enum TokenType {
+  ACCESS
+  REFRESH
+  RESET_PASSWORD
+  VERIFY_EMAIL
+}
+model User {
+  id              Int      @id @default(autoincrement())
+  name            String?
+  email           String   @unique
+  password        String
+  isEmailVerified Boolean  @default(false)
+  createdAt       DateTime? @default(now())
+  updatedAt       DateTime? @updatedAt
+  Token           Token[]
+}
+
+// ========================================
+// Model for company entity
+
+model Entity {
+  id                       Int         @id @default(autoincrement())
+  entityId                 Int         @unique
+  entityCategory           String
+  entitySubCategory        String      @default("")
+  entityCountry            String
+  entityRegion             String      @default("")
+  entityLegalName          String
+  entityLegalNameInEn      String
+  registrationEntityId     String      @default("")
+  registrationAuthorityId  String
+  entityLegalFormCode      String
+  entityCreationDate       String
+  website                  String
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime?    @updatedAt
+  haveDirectParent         Boolean      @default(false)
+  haveUltimateParent       Boolean      @default(false)
+  otherEntityNames         OtherEntityNames[]
+  entityLocalAddress       EntityLocalAddress[]
+  entityHeadQuarterAddress EntityHeadQuarterAddress[]
+  entityContact            EntityContact[]
+  entityDirectParent       EntityDirectParent[]
+  entityUltimateParent     EntityUltimateParent[]
+}
+
+//Entity Direct parent model
+model EntityDirectParent {
+  id                            Int            @id @default(autoincrement())
+  entityId                      Int
+  leiNumber                     String? 
+  accountingStandared           String?
+  accountingStatus              String?
+  AccountingStartDate           String?
+  AccountingEndDate             String?
+  percentageOwned               Int?
+  haveLei                       Boolean         @default(false)
+  leiReason                     String?         @default("")
+  directRelationshipTimePeriod  DirectRelationshipTimePeriod[]
+  directParentRelation          Entity @relation(fields: [entityId], references: [entityId])
+}
+
+// Direct relationship time period model
+model DirectRelationshipTimePeriod {
+  id                      Int     @id @default(autoincrement())
+  directParentId          Int
+  RelationshipStartDate   String
+  RelationshipEndDate     String?
+  periodType              String?
+  entityDirectParent      EntityDirectParent @relation(fields: [directParentId], references: [id])
+}
+
+//Entity Ultimate parent model
+model EntityUltimateParent {
+  id                              Int            @id @default(autoincrement())
+  entityId                        Int
+  leiNumber                       String?
+  accountingStatus                String?
+  accountingStandared             String?
+  percentageOwned                 Int?
+  haveLei                         Boolean         @default(false)
+  leiReason                       String?         @default("")
+  utimateRelationshipTimePeriod   UltimateRelationshipTimePeriod[]
+  ultimateParentRelation          Entity          @relation(fields: [entityId], references: [entityId])
+}
+
+// Ultimate relationship time period model
+model UltimateRelationshipTimePeriod {
+  id                   Int     @id @default(autoincrement())
+  ultimateParentId     Int
+  startDate            String
+  endDate              String?
+  periodType           String?
+  entityUltimateParent EntityUltimateParent @relation(fields: [ultimateParentId], references: [id])
+}
+
+// Define the EntityName model
+model OtherEntityNames {
+  id                Int      @id @default(autoincrement())
+  entityId          Int
+  entityNameType    String?  @default("")
+  entityName        String?  @default("")
+  entity            Entity?  @relation(fields: [entityId], references: [entityId])
+}
+
+// Define the Entity local Address model
+model EntityLocalAddress {
+  id          Int      @id @default(autoincrement())
+  entityId    Int
+  lane1       String
+  lane2       String?  @default("")
+  lane3       String?  @default("")
+  lane4       String?  @default("")
+  city        String   
+  country     String 
+  region      String?
+  postalCode  String?
+  entity     Entity  @relation(fields: [entityId], references: [entityId])
+}
+
+// Define the EntityAddress model
+model EntityHeadQuarterAddress {
+  id            Int      @id @default(autoincrement())
+  entityId      Int
+  HQlane1       String
+  HQlane2       String?  @default("")
+  HQlane3       String?  @default("")
+  HQlane4       String?  @default("")
+  HQcity        String   
+  HQcountry     String 
+  HQregion      String?  @default("")
+  HQpostalCode  String?  @default("")
+  entity        Entity  @relation(fields: [entityId], references: [entityId])
+}
+
+// Define the entity Contact model
+model EntityContact {
+  id          Int      @id @default(autoincrement())
+  entityId    Int
+  firstName   String
+  lastName    String
+  position    String
+  phone       String
+  email       String
+  entity      Entity  @relation(fields: [entityId], references: [entityId])
+}
+
+// End company entity code===========================================
+
+// Dropdown list for RegistrationAuthority codes
+model RegistrationAuthority {
+  id   Int    @id @default(autoincrement())
+  code String @unique
+  name String
+}
+
+// Dropdown list for legal form codes
+model LegalForm {
+  id           Int    @id @default(autoincrement())
+  code         String @unique
+  country_code String
+  name         String
+}
+
+model Country {
+  id       Int     @id @default(autoincrement())
+  name     String
+  iso_code String  @unique
+  states   State[]
+}
+
+model State {
+  id          Int     @id @default(autoincrement())
+  value       String  @unique
+  description String
+  country     Country @relation(fields: [iso_code], references: [iso_code])
+  iso_code    String
+}
+
+model Token {
+  id          Int       @id @default(autoincrement())
+  token       String
+  type        TokenType
+  expires     DateTime
+  blacklisted Boolean
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+}
+
+
+
+// ========================================
+// Draft code start here... for Model for company entity
+
+model DraftEntity {
+  id                       Int         @id @default(autoincrement())
+  entityId                 Int         @unique
+  entityCategory           String?
+  entitySubCategory        String?      @default("")
+  entityCountry            String?
+  entityRegion             String?      @default("")
+  entityLegalName          String?
+  entityLegalNameInEn      String?
+  registrationEntityId     String?      @default("")
+  registrationAuthorityId  String?
+  entityLegalFormCode      String?
+  entityCreationDate       String?
+  website                  String?
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime?    @updatedAt
+  haveDirectParent         Boolean?      @default(false)
+  haveUltimateParent       Boolean?      @default(false)
+  otherEntityNames         DraftOtherEntityNames[]
+  entityLocalAddress       DraftEntityLocalAddress[]
+  entityHeadQuarterAddress DraftEntityHeadQuarterAddress[]
+  entityContact            DraftEntityContact[]
+  entityDirectParent       DraftEntityDirectParent[]
+  entityUltimateParent     DraftEntityUltimateParent[]
+}
+
+//Entity Direct parent model
+model DraftEntityDirectParent {
+  id                            Int            @id @default(autoincrement())
+  entityId                      Int
+  leiNumber                     String? 
+  accountingStandared           String?
+  accountingStatus              String?
+  AccountingStartDate           String?
+  AccountingEndDate             String?
+  percentageOwned               Int?
+  haveLei                       Boolean         @default(false)
+  leiReason                     String?         @default("")
+  directRelationshipTimePeriod  DraftDirectRelationshipTimePeriod[]
+  directParentRelation          DraftEntity @relation(fields: [entityId], references: [entityId])
+}
+
+// Direct relationship time period model
+model DraftDirectRelationshipTimePeriod {
+  id                      Int     @id @default(autoincrement())
+  directParentId          Int
+  RelationshipStartDate   String?
+  RelationshipEndDate     String?
+  periodType              String?
+  entityDirectParent      DraftEntityDirectParent @relation(fields: [directParentId], references: [id])
+}
+
+//Entity Ultimate parent model
+model DraftEntityUltimateParent {
+  id                              Int            @id @default(autoincrement())
+  entityId                        Int
+  leiNumber                       String?
+  accountingStatus                String?
+  accountingStandared             String?
+  percentageOwned                 Int?
+  haveLei                         Boolean         @default(false)
+  leiReason                       String?         @default("")
+  utimateRelationshipTimePeriod   DraftUltimateRelationshipTimePeriod[]
+  ultimateParentRelation          DraftEntity          @relation(fields: [entityId], references: [entityId])
+}
+
+// Ultimate relationship time period model
+model DraftUltimateRelationshipTimePeriod {
+  id                   Int     @id @default(autoincrement())
+  ultimateParentId     Int
+  startDate            String?
+  endDate              String?
+  periodType           String?
+  entityUltimateParent DraftEntityUltimateParent @relation(fields: [ultimateParentId], references: [id])
+}
+
+// Define the EntityName model
+model DraftOtherEntityNames {
+  id                Int      @id @default(autoincrement())
+  entityId          Int
+  entityNameType    String?  @default("")
+  entityName        String?  @default("")
+  entity            DraftEntity?  @relation(fields: [entityId], references: [entityId])
+}
+
+// Define the Entity local Address model
+model DraftEntityLocalAddress {
+  id          Int      @id @default(autoincrement())
+  entityId    Int
+  lane1       String
+  lane2       String?  @default("")
+  lane3       String?  @default("")
+  lane4       String?  @default("")
+  city        String   
+  country     String 
+  region      String?
+  postalCode  String?
+  entity     DraftEntity  @relation(fields: [entityId], references: [entityId])
+}
+
+// Define the EntityAddress model
+model DraftEntityHeadQuarterAddress {
+  id            Int      @id @default(autoincrement())
+  entityId      Int
+  HQlane1       String
+  HQlane2       String?  @default("")
+  HQlane3       String?  @default("")
+  HQlane4       String?  @default("")
+  HQcity        String   
+  HQcountry     String 
+  HQregion      String?  @default("")
+  HQpostalCode  String?  @default("")
+  entity        DraftEntity  @relation(fields: [entityId], references: [entityId])
+}
+
+// Define the entity Contact model
+model DraftEntityContact {
+  id          Int      @id @default(autoincrement())
+  entityId    Int
+  firstName   String
+  lastName    String
+  position    String
+  phone       String
+  email       String
+  entity      DraftEntity  @relation(fields: [entityId], references: [entityId])
+}
+
+// End Draft code here...===========================================
